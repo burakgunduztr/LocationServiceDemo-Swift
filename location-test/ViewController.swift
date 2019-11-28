@@ -25,16 +25,6 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
     var desiredAddress: String = ""
     
     var isLocationUpdateLocked = false
-    var isLocationRequestCompleted: Bool = false {
-        didSet {
-            if isLocationRequestCompleted && !self.isLocationUpdateLocked {
-                if let lat = self.currentLatDegrees, let long = self.currentLongDegrees {
-                    self.isLocationUpdateLocked = true
-                    self.setUsersClosestCity(lat, long: long)
-                }
-            }
-        }
-    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -45,31 +35,33 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
         self.locationManager.requestWhenInUseAuthorization()
         self.locationManager.startUpdatingLocation()
+        
+        if !self.isLocationUpdateLocked {
+            self.startTime = DispatchTime.now()
+        }
     }
 
     @IBAction func startLocationBtn(_ sender: Any) {
         
         self.startTime = DispatchTime.now()
-        self.isLocationRequestCompleted = false
-        self.isLocationUpdateLocked = false
-        self.locationManager.startUpdatingLocation()
-    }
-    
-    func manipulateStartBtn() {
         
-        self.startTime = DispatchTime.now()
-        self.isLocationRequestCompleted = false
-        self.isLocationUpdateLocked = false
-        self.locationManager.startUpdatingLocation()
+        if let lat = self.currentLatDegrees, let long = self.currentLongDegrees {
+            self.setUsersClosestCity(lat, long: long)
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let value = manager.location?.coordinate
         if let latitude = value?.latitude, let longitude = value?.longitude {
-            
             self.currentLatDegrees = latitude
             self.currentLongDegrees = longitude
-            self.isLocationRequestCompleted = true
+            
+            if !self.isLocationUpdateLocked {
+                if let lat = self.currentLatDegrees, let long = self.currentLongDegrees {
+                    self.isLocationUpdateLocked = true
+                    self.setUsersClosestCity(lat, long: long)
+                }
+            }
         }
     }
     
@@ -96,25 +88,25 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
                 if let street = pm.thoroughfare, let subloc = pm.subLocality, let locality = pm.locality,
                     let ads = pm.administrativeArea, let code = pm.postalCode, let count = pm.country {
                     
-                    self.desiredAddress = "\(street), \(subloc), \(locality), \(ads) \(code) \(count) (lat: \(Float(lat)), long: \(Float(lat))) - elapsed time: \(timeInterval)"
+                    self.desiredAddress = "\(street), \(subloc), \(locality), \(ads) \(code) \(count) (lat: \(Float(lat)), long: \(Float(long))) - elapsed time: \(timeInterval)"
                 }
                 else if let subloc = pm.subLocality, let locality = pm.locality,
                     let ads = pm.administrativeArea, let code = pm.postalCode, let count = pm.country {
 
-                    self.desiredAddress = "\(subloc), \(locality), \(ads) \(code) \(count) (lat: \(Float(lat)), long: \(Float(lat))) - elapsed time: \(timeInterval)"
+                    self.desiredAddress = "\(subloc), \(locality), \(ads) \(code) \(count) (lat: \(Float(lat)), long: \(Float(long))) - elapsed time: \(timeInterval)"
                 }
                 else if let locality = pm.locality,
                     let ads = pm.administrativeArea, let code = pm.postalCode, let count = pm.country {
 
-                    self.desiredAddress = "\(locality), \(ads) \(code) \(count) (lat: \(Float(lat)), long: \(Float(lat))) - elapsed time: \(timeInterval)"
+                    self.desiredAddress = "\(locality), \(ads) \(code) \(count) (lat: \(Float(lat)), long: \(Float(long))) - elapsed time: \(timeInterval)"
                 }
                 else if let ads = pm.administrativeArea, let code = pm.postalCode, let count = pm.country {
 
-                    self.desiredAddress = "\(ads) \(code) \(count) (lat: \(Float(lat)), long: \(Float(lat))) - elapsed time: \(timeInterval)"
+                    self.desiredAddress = "\(ads) \(code) \(count) (lat: \(Float(lat)), long: \(Float(long))) - elapsed time: \(timeInterval)"
                 }
                 else if let count = pm.country {
 
-                    self.desiredAddress = "\(count) (lat: \(Float(lat)), long: \(Float(lat))) - elapsed time: \(timeInterval)"
+                    self.desiredAddress = "\(count) (lat: \(Float(lat)), long: \(Float(long))) - elapsed time: \(timeInterval)"
                 }
                 
                 let alert = UIAlertController(title: "Location Completed", message: self.desiredAddress, preferredStyle: UIAlertController.Style.alert)
